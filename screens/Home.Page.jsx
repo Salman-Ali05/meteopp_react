@@ -5,8 +5,11 @@ import axios from 'axios';
 
 const HomePage = () => {
 
+    const APIKEYWEATHER = "5858c82ebf597ee396b0cbace54ddf20";
+
     const currentDate = new Date();
     const hour = currentDate.getHours();
+
     // Ok ici c'est GPT, j'avais la flemme de bien réfléchir sur ce cas là x')
     const getDaySuffix = (day) => {
         if (day >= 11 && day <= 13) {
@@ -41,18 +44,19 @@ const HomePage = () => {
 
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thrusday', 'Friday', 'Saturday', 'Sunday']
 
-    const [data, setData] = useState({});
+    const [data, setData] = useState();
+    const [inputTown, setInputTown] = useState("");
 
-    const onPress = () => {
+    const fetchData = () => {
         let config = {
             method: 'GET',
             maxBodyLength: Infinity,
-            url: "https://api-adresse.data.gouv.fr/search/?q=8+bd+du+port+Paris"
+            url: "http://api.openweathermap.org/data/2.5/weather?q=" + inputTown + "&appid=" + APIKEYWEATHER
         };
 
         axios.request(config)
             .then((response) => {
-                console.log(response.data);
+                setData(response.data)
             })
             .catch((error) => {
                 console.log(error);
@@ -63,12 +67,20 @@ const HomePage = () => {
     const [search, setSearch] = useState(false);
 
     const handleSearch = () => {
-        setSearch(!search);
+        if (inputTown == ""){
+            setSearch(!search);
+        }else{
+            fetchData();
+        }
     }
 
     useEffect(() => {
         setPic();
     }, [currentWeatherPic]);
+
+    useEffect(() => {
+        fetchData()
+    }, []);
 
     return (
         <View style={styles.container}>
@@ -78,7 +90,7 @@ const HomePage = () => {
                         <View>
                             {
                                 search ? (
-                                    <TextInput placeholder="Town's name" style={styles.textInput} />
+                                    <TextInput placeholder="Town's name" style={styles.textInput} onChangeText={(e) => setInputTown(e)} />
                                 ) : (
                                     <React.Fragment>
                                         <Text style={[styles.currentDay, { color: textColor }]}>{formattedDay}</Text>
@@ -101,10 +113,11 @@ const HomePage = () => {
                         </View>
                     </View>
                     <View>
-                        <Text style={[styles.textsTopSide, { color: textColor }]}>Paris</Text>
-                        <Text style={[styles.textsTopSide, { color: textColor }]}>26°C</Text>
-                        <Text style={[styles.textsTopSide, { color: textColor }]}>Sunny</Text>
-                        <Text style={[styles.textsTopSide, { color: textColor }]}>↓19° ↑27°</Text>
+                        <Text style={[styles.textsTopSide, { color: textColor }]}>{data && data.name}</Text>
+                        <Text style={[styles.textsTopSide, { color: textColor }]}>{data && (data.main.temp - 273).toFixed(1)}°C</Text>
+                        <Text style={[styles.textsTopSide, { color: textColor }]}>{data && data.weather && data.weather[0] && data.weather[0].main}</Text>
+
+                        <Text style={[styles.textsTopSide, { color: textColor }]}>↓{data && (data.main.temp_min - 273).toFixed(0)}° ↑{data && (data.main.temp_max - 273).toFixed(0)}°</Text>
                     </View>
                 </ImageBackground>
             </View>
@@ -137,7 +150,7 @@ const styles = StyleSheet.create({
     },
     currentWeather: {
         flex: 1,
-        justifyContent : "space-around"
+        justifyContent: "space-around"
     },
     topElements: {
         marginTop: 30,
@@ -172,9 +185,9 @@ const styles = StyleSheet.create({
         width: 300,
         textAlign: "center",
         backgroundColor: "#FFFFFF80",
-        height : 45,
-        borderRadius : 15,
-        fontSize : 20
+        height: 45,
+        borderRadius: 15,
+        fontSize: 20
 
     },
     // START BOTTOM CSS
