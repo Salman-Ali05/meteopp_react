@@ -1,8 +1,10 @@
-import { View, Text, StyleSheet, ImageBackground, Image, ScrollView } from 'react-native'
+import { View, Text, StyleSheet, ImageBackground, Image, ScrollView, TextInput } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import Icon from 'react-native-vector-icons/FontAwesome';
+import axios from 'axios';
 
 const HomePage = () => {
+
     const currentDate = new Date();
     const hour = currentDate.getHours();
     // Ok ici c'est GPT, j'avais la flemme de bien réfléchir sur ce cas là x')
@@ -39,6 +41,31 @@ const HomePage = () => {
 
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thrusday', 'Friday', 'Saturday', 'Sunday']
 
+    const [data, setData] = useState({});
+
+    const onPress = () => {
+        let config = {
+            method: 'GET',
+            maxBodyLength: Infinity,
+            url: "https://api-adresse.data.gouv.fr/search/?q=8+bd+du+port+Paris"
+        };
+
+        axios.request(config)
+            .then((response) => {
+                console.log(response.data);
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+        // console.log(data);
+    }
+
+    const [search, setSearch] = useState(false);
+
+    const handleSearch = () => {
+        setSearch(!search);
+    }
+
     useEffect(() => {
         setPic();
     }, [currentWeatherPic]);
@@ -49,18 +76,27 @@ const HomePage = () => {
                 <ImageBackground style={styles.currentWeather} source={currentWeatherPic}>
                     <View style={styles.topElements}>
                         <View>
-                            <Text style={[styles.currentDay, { color: textColor }]}>{formattedDay}</Text>
-                            <Image
-                                style={styles.heartList}
-                                source={
-                                    hour >= 17
-                                        ? require('../assets/heart_list_icon_white.png')
-                                        : require('../assets/heart_list_icon.png')
-                                }
-                            />
+                            {
+                                search ? (
+                                    <TextInput placeholder="Town's name" style={styles.textInput} />
+                                ) : (
+                                    <React.Fragment>
+                                        <Text style={[styles.currentDay, { color: textColor }]}>{formattedDay}</Text>
+                                        <Image
+                                            style={styles.heartList}
+                                            source={
+                                                hour >= 17
+                                                    ? require('../assets/heart_list_icon_white.png')
+                                                    : require('../assets/heart_list_icon.png')
+                                            }
+                                        />
+                                    </React.Fragment>
+                                )
+
+                            }
                         </View>
                         <View>
-                            <Icon style={styles.searchIcon} name="search" />
+                            <Icon style={styles.searchIcon} name="search" onPress={handleSearch} />
                             <Icon style={[styles.heartIcon, { color: textColor }]} name="heart-o" />
                         </View>
                     </View>
@@ -101,6 +137,7 @@ const styles = StyleSheet.create({
     },
     currentWeather: {
         flex: 1,
+        justifyContent : "space-around"
     },
     topElements: {
         marginTop: 30,
@@ -129,6 +166,17 @@ const styles = StyleSheet.create({
         fontSize: 32,
         textAlign: "center"
     },
+    textInput: {
+        alignSelf: "center",
+        color: "#333",
+        width: 300,
+        textAlign: "center",
+        backgroundColor: "#FFFFFF80",
+        height : 45,
+        borderRadius : 15,
+        fontSize : 20
+
+    },
     // START BOTTOM CSS
     bottomSide: {
         height: "40%",
@@ -136,9 +184,9 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     viewListDay: {
-        borderBottomWidth: 1,
         width: "80%",
         alignSelf: "center",
+        borderColor: "#333",
     },
     textsBottomSide: {
         fontSize: 20,
