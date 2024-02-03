@@ -45,7 +45,7 @@ const HomePage = () => {
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thrusday', 'Friday', 'Saturday', 'Sunday']
 
     const [data, setData] = useState();
-    const [inputTown, setInputTown] = useState("Paris");
+    const [inputTown, setInputTown] = useState("");
 
     const fetchData = () => {
         let config = {
@@ -67,7 +67,11 @@ const HomePage = () => {
     const [search, setSearch] = useState(false);
 
     const handleSearch = () => {
-        setSearch(!search);
+        if (inputTown == ""){
+            setSearch(!search);
+        }else{
+            fetchData();
+        }
     }
 
     useEffect(() => {
@@ -105,7 +109,7 @@ const HomePage = () => {
                         </View>
                         <View>
                             <Icon style={styles.searchIcon} name="search" onPress={handleSearch} />
-                            <Icon style={[styles.heartIcon, { color: textColor }]} name="heart-o" onPress={fetchData} />
+                            <Icon style={[styles.heartIcon, { color: textColor }]} name="heart-o" />
                         </View>
                     </View>
                     <View>
