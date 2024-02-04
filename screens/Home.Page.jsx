@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ImageBackground, Image, ScrollView, TextInput } from 'react-native'
+import { View, Text, StyleSheet, ImageBackground, Image, ScrollView, TextInput, Switch } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import Icon from 'react-native-vector-icons/FontAwesome';
 import axios from 'axios';
@@ -48,15 +48,22 @@ const HomePage = () => {
     const [inputTown, setInputTown] = useState("");
 
     const fetchData = () => {
+        let url = "http://api.openweathermap.org/data/2.5/weather?q=" + inputTown + "&appid=" + APIKEYWEATHER;
+        // "https://api.openweathermap.org/data/3.0/onecall?lat=33.44&lon=-94.04&exclude=hourly,daily&appid="+APIKEYWEATHER
+        if (!toggleState) {
+            url +="&units=imperial"
+        }
         let config = {
             method: 'GET',
             maxBodyLength: Infinity,
-            url: "http://api.openweathermap.org/data/2.5/weather?q=" + inputTown + "&appid=" + APIKEYWEATHER
+            url: url
+            
         };
 
         axios.request(config)
             .then((response) => {
                 setData(response.data)
+                console.log(data);
             })
             .catch((error) => {
                 console.log(error);
@@ -67,12 +74,19 @@ const HomePage = () => {
     const [search, setSearch] = useState(false);
 
     const handleSearch = () => {
-        if (inputTown == ""){
+        if (inputTown == "") {
             setSearch(!search);
-        }else{
+        } else {
             fetchData();
         }
     }
+
+    const [toggleState, setToggleState] = useState(false);
+
+    const toggleSwitch = () => {
+        setToggleState(!toggleState);
+        fetchData();
+    };
 
     useEffect(() => {
         setPic();
@@ -92,7 +106,7 @@ const HomePage = () => {
                                 search ? (
                                     <TextInput placeholder="Town's name" style={styles.textInput} onChangeText={(e) => setInputTown(e)} />
                                 ) : (
-                                    <React.Fragment>
+                                    <>
                                         <Text style={[styles.currentDay, { color: textColor }]}>{formattedDay}</Text>
                                         <Image
                                             style={styles.heartList}
@@ -102,7 +116,7 @@ const HomePage = () => {
                                                     : require('../assets/heart_list_icon.png')
                                             }
                                         />
-                                    </React.Fragment>
+                                    </>
                                 )
 
                             }
@@ -114,10 +128,31 @@ const HomePage = () => {
                     </View>
                     <View>
                         <Text style={[styles.textsTopSide, { color: textColor }]}>{data && data.name}</Text>
-                        <Text style={[styles.textsTopSide, { color: textColor }]}>{data && (data.main.temp - 273).toFixed(1)}°C</Text>
-                        <Text style={[styles.textsTopSide, { color: textColor }]}>{data && data.weather && data.weather[0] && data.weather[0].main}</Text>
+                        {
+                            !toggleState ? (
+                                <>
+                                    <Text style={[styles.textsTopSide, { color: textColor }]}>{data && (data.main.temp - 273).toFixed(1)}°C</Text>
+                                    <Text style={[styles.textsTopSide, { color: textColor }]}>{data && data.weather && data.weather[0] && data.weather[0].main}</Text>
+                                    <Text style={[styles.textsTopSide, { color: textColor }]}>↓{data && (data.main.temp_min - 273).toFixed(0)}° ↑{data && (data.main.temp_max - 273).toFixed(0)}°</Text>
+                                </>
+                            ) : (
+                                <>
+                                    <Text style={[styles.textsTopSide, { color: textColor }]}>{data && (data.main.temp).toFixed(1)}°C</Text>
+                                    <Text style={[styles.textsTopSide, { color: textColor }]}>{data && data.weather && data.weather[0] && data.weather[0].main}</Text>
+                                    <Text style={[styles.textsTopSide, { color: textColor }]}>↓{data && (data.main.temp_min).toFixed(0)}° ↑{data && (data.main.temp_max).toFixed(0)}°</Text>
+                                </>
+                            )
+                        }
 
-                        <Text style={[styles.textsTopSide, { color: textColor }]}>↓{data && (data.main.temp_min - 273).toFixed(0)}° ↑{data && (data.main.temp_max - 273).toFixed(0)}°</Text>
+                    </View>
+                    <View style={styles.toggleView}>
+                        <Text style={[styles.textsTopSide, { color: textColor }]}>°C</Text>
+                        <Switch value={toggleState}
+                            onValueChange={toggleSwitch}
+                            trackColor={{ false: '#767577', true: '#81b0ff' }}
+                            thumbColor={toggleState ? '#f5dd4b' : '#f4f3f4'}
+                            ios_backgroundColor="#3e3e3e" />
+                        <Text style={[styles.textsTopSide, { color: textColor }]}>°F</Text>
                     </View>
                 </ImageBackground>
             </View>
@@ -189,6 +224,14 @@ const styles = StyleSheet.create({
         borderRadius: 15,
         fontSize: 20
 
+    },
+    toggleView: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    toggle: {
+        backgroundColor: "red"
     },
     // START BOTTOM CSS
     bottomSide: {
