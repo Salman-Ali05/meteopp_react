@@ -51,24 +51,24 @@ const HomePage = () => {
     }
 
     const fetchData = () => {
-        // let url = "http://api.openweathermap.org/data/2.5/weather?q=" + inputTown + "&appid=" + APIKEYWEATHER;
-        // if (!toggleState) {
-        //     url += "&units=imperial"
-        // }
-        // let config = {
-        //     method: 'GET',
-        //     maxBodyLength: Infinity,
-        //     url: url
+        let url = "http://api.openweathermap.org/data/2.5/weather?q=" + inputTown + "&appid=" + APIKEYWEATHER;
+        if (!toggleState) {
+            url += "&units=imperial"
+        }
+        let config = {
+            method: 'GET',
+            maxBodyLength: Infinity,
+            url: url
 
-        // };
+        };
 
-        // axios.request(config)
-        //     .then((response) => {
-        //         setData(response.data)
-        //     })
-        //     .catch((error) => {
-        //         console.log(error);
-        //     });
+        axios.request(config)
+            .then((response) => {
+                setData(response.data)
+            })
+            .catch((error) => {
+                console.log(error);
+            });
     }
 
     const handleSearch = () => {
@@ -157,7 +157,7 @@ const HomePage = () => {
                             <TextInput placeholder="Town's name" style={styles.textInput} onChangeText={(e) => setInputTown(e)} />
                             <>
                                 <Text style={[styles.currentDay, { color: textColor }]}>{formattedDay}</Text>
-                                <TouchableOpacity onPress={() => navigation.navigate("Favorites")}>
+                                <TouchableOpacity onPress={() => navigation.navigate("Favorites", { towns: towns })}>
                                     <Image
                                         style={styles.heartList}
                                         source={
@@ -236,7 +236,7 @@ const HomePage = () => {
                         days.map((day, index) => (
                             <View key={index} style={[styles.viewListDay, { borderBottomWidth: index == days.length - 1 ? 0 : 1 }]}>
                                 <Text style={styles.textsBottomSide}>
-                                    {day} <Image style={styles.heartList} source={require("../assets/sunny_icon.png")} /> 28°C
+                                    {day} <Image style={styles.iconWeather} source={require("../assets/sunny_icon.png")} /> 28°C
                                 </Text>
                             </View>
                         ))
@@ -275,6 +275,10 @@ const styles = StyleSheet.create({
         color: "#fff"
     },
     heartList: {
+        height: 50,
+        width: 50
+    }, 
+    iconWeather: {
         height: 50,
         width: 50
     },
