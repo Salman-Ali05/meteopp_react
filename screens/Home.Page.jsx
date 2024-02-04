@@ -15,6 +15,7 @@ const HomePage = () => {
     const [toggleState, setToggleState] = useState(false);
     const [currentWeatherPic, setCurrentWeatherPic] = useState('');
     const [textColor, setTextColor] = useState('#333');
+    const [heart,setHeart] = useState(false); 
 
     // Ok ici c'est GPT, j'avais la flemme de bien réfléchir sur ce cas là x')
     const getDaySuffix = (day) => {
@@ -78,6 +79,11 @@ const HomePage = () => {
         fetchData();
     };
 
+    const handleSetHeart = () => {
+        setHeart(!heart);
+        console.log(heart);
+    };
+
     useEffect(() => {
         setPic();
     }, [currentWeatherPic]);
@@ -85,8 +91,6 @@ const HomePage = () => {
     useEffect(() => {
         fetchData()
     }, []);
-
-    console.log(currentDate);
 
     return (
         <View style={styles.container}>
@@ -110,7 +114,13 @@ const HomePage = () => {
                         </View>
                         <View>
                             <Icon style={styles.searchIcon} name="search" onPress={handleSearch} />
-                            <Icon style={[styles.heartIcon, { color: textColor }]} name="heart-o" />
+                            {
+                                !heart ?
+                            <Icon style={[styles.heartIcon, { color: textColor }]} name="heart-o" onPress={handleSetHeart}/>
+                            :
+                            <Icon style={[styles.heartIcon, { color: "red" }]} name="heart" onPress={handleSetHeart}/>
+                            
+                            }
                         </View>
                     </View>
                     <View>
