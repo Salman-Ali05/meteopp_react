@@ -9,12 +9,6 @@ const HomePage = () => {
 
     const currentDate = new Date();
     const hour = currentDate.getHours();
-    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thrusday', 'Friday', 'Saturday', 'Sunday']
-    const [data, setData] = useState();
-    const [inputTown, setInputTown] = useState("Paris");
-    const [toggleState, setToggleState] = useState(false);
-    const [currentWeatherPic, setCurrentWeatherPic] = useState('');
-    const [textColor, setTextColor] = useState('#333');
 
     // Ok ici c'est GPT, j'avais la flemme de bien réfléchir sur ce cas là x')
     const getDaySuffix = (day) => {
@@ -36,6 +30,9 @@ const HomePage = () => {
     const formattedDay = `${currentDate.toLocaleDateString('en-US', { weekday: 'long' })} ${currentDate.getDay()}${getDaySuffix(currentDate.getDay())}`;
     // fin GPT
 
+    const [currentWeatherPic, setCurrentWeatherPic] = useState('');
+    const [textColor, setTextColor] = useState('#333');
+
     function setPic() {
         if (hour >= 17) {
             setCurrentWeatherPic(require('../assets/night_weather.jpg'));
@@ -45,33 +42,46 @@ const HomePage = () => {
         }
     }
 
+    const days = ['Monday', 'Tuesday', 'Wednesday', 'Thrusday', 'Friday', 'Saturday', 'Sunday']
+
+    const [data, setData] = useState();
+    const [inputTown, setInputTown] = useState("");
+
     const fetchData = () => {
         let url = "http://api.openweathermap.org/data/2.5/weather?q=" + inputTown + "&appid=" + APIKEYWEATHER;
+        // "https://api.openweathermap.org/data/3.0/onecall?lat=33.44&lon=-94.04&exclude=hourly,daily&appid="+APIKEYWEATHER
         if (!toggleState) {
-            url += "&units=imperial"
+            url +="&units=imperial"
         }
         let config = {
             method: 'GET',
             maxBodyLength: Infinity,
             url: url
-
+            
         };
 
         axios.request(config)
             .then((response) => {
                 setData(response.data)
+                console.log(data);
             })
             .catch((error) => {
                 console.log(error);
             });
+        // console.log(data);
     }
+
+    const [search, setSearch] = useState(false);
 
     const handleSearch = () => {
         if (inputTown == "") {
+            setSearch(!search);
+        } else {
             fetchData();
         }
     }
 
+    const [toggleState, setToggleState] = useState(false);
 
     const toggleSwitch = () => {
         setToggleState(!toggleState);
@@ -86,27 +96,30 @@ const HomePage = () => {
         fetchData()
     }, []);
 
-    console.log(currentDate);
-
     return (
         <View style={styles.container}>
             <View style={styles.topSide}>
                 <ImageBackground style={styles.currentWeather} source={currentWeatherPic}>
                     <View style={styles.topElements}>
                         <View>
-                            <TextInput placeholder="Town's name" style={styles.textInput} onChangeText={(e) => setInputTown(e)} />
-                            <>
-                                <Text style={[styles.currentDay, { color: textColor }]}>{formattedDay}</Text>
-                                <Image
-                                    style={styles.heartList}
-                                    source={
-                                        hour >= 17
-                                            ? require('../assets/heart_list_icon_white.png')
-                                            : require('../assets/heart_list_icon.png')
-                                    }
-                                />
-                            </>
+                            {
+                                search ? (
+                                    <TextInput placeholder="Town's name" style={styles.textInput} onChangeText={(e) => setInputTown(e)} />
+                                ) : (
+                                    <>
+                                        <Text style={[styles.currentDay, { color: textColor }]}>{formattedDay}</Text>
+                                        <Image
+                                            style={styles.heartList}
+                                            source={
+                                                hour >= 17
+                                                    ? require('../assets/heart_list_icon_white.png')
+                                                    : require('../assets/heart_list_icon.png')
+                                            }
+                                        />
+                                    </>
+                                )
 
+                            }
                         </View>
                         <View>
                             <Icon style={styles.searchIcon} name="search" onPress={handleSearch} />
@@ -172,7 +185,7 @@ const styles = StyleSheet.create({
     },
     currentWeather: {
         flex: 1,
-        justifyContent: "space-around",
+        justifyContent: "space-around"
     },
     topElements: {
         marginTop: 30,
@@ -199,7 +212,7 @@ const styles = StyleSheet.create({
     },
     textsTopSide: {
         fontSize: 32,
-        textAlign: "center",
+        textAlign: "center"
     },
     textInput: {
         alignSelf: "center",
