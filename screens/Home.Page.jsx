@@ -1,11 +1,14 @@
-import { View, Text, StyleSheet, ImageBackground, Image, ScrollView, TextInput, Switch } from 'react-native'
+import { View, Text, StyleSheet, ImageBackground, Image, ScrollView, TextInput, Switch, TouchableOpacity } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import Icon from 'react-native-vector-icons/FontAwesome';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation } from '@react-navigation/native';
 
 const HomePage = () => {
 
     const APIKEYWEATHER = "5858c82ebf597ee396b0cbace54ddf20";
+    const navigation = useNavigation();
 
     const currentDate = new Date();
     const hour = currentDate.getHours();
@@ -15,6 +18,8 @@ const HomePage = () => {
     const [toggleState, setToggleState] = useState(false);
     const [currentWeatherPic, setCurrentWeatherPic] = useState('');
     const [textColor, setTextColor] = useState('#333');
+    const [heart, setHeart] = useState(false);
+    const [towns, setTowns] = useState([]);
 
     // Ok ici c'est GPT, j'avais la flemme de bien réfléchir sur ce cas là x')
     const getDaySuffix = (day) => {
@@ -67,16 +72,69 @@ const HomePage = () => {
     }
 
     const handleSearch = () => {
-        if (inputTown == "") {
-            fetchData();
-        }
+        fetchData();
     }
-
 
     const toggleSwitch = () => {
         setToggleState(!toggleState);
         fetchData();
     };
+
+    const handleSetHeart = () => {
+        if (!heart) {
+            addToFav(inputTown);
+        } else {
+            removeFav(inputTown);
+        }
+        setHeart(!heart);
+    };
+
+    // GPT car manque de collectif :/
+    const addToFav = async (value) => {
+        try {
+            const townsLocalS = await AsyncStorage.getItem("towns");
+            let existTown = townsLocalS ? JSON.parse(townsLocalS) : [];
+
+            if (!existTown.includes(value)) {
+                existTown.push(value);
+                await AsyncStorage.setItem("towns", JSON.stringify(existTown));
+                setTowns(existTown);
+            }
+        } catch (e) {
+            console.error('Erreur lors du stockage des données:', e);
+        }
+    };
+
+    const getFavs = async () => {
+        try {
+            const listTowns = await AsyncStorage.getItem("towns");
+            if (listTowns !== null) {
+                const towns = JSON.parse(listTowns);
+                console.log('Données récupérées avec succès:', towns);
+                setTowns(towns);
+            } else {
+                setTowns([]);
+            }
+        } catch (e) {
+            console.error('Erreur lors de la récupération des données:', e);
+            return [];
+        }
+    };
+
+    const removeFav = async (value) => {
+        try {
+            const townsLocalS = await AsyncStorage.getItem("towns");
+            let currentTowns = townsLocalS ? JSON.parse(townsLocalS) : [];
+
+            const updatedTowns = currentTowns.filter((town) => town !== value);
+
+            await AsyncStorage.setItem("towns", JSON.stringify(updatedTowns));
+            setTowns(updatedTowns);  // Mise à jour de la variable towns dans le state
+        } catch (e) {
+            console.error('Erreur lors de la suppression des données:', e);
+        }
+    };
+    // FIN GPT
 
     useEffect(() => {
         setPic();
@@ -86,7 +144,9 @@ const HomePage = () => {
         fetchData()
     }, []);
 
-    console.log(currentDate);
+    useEffect(() => {
+        getFavs()
+    }, []);
 
     return (
         <View style={styles.container}>
@@ -97,20 +157,45 @@ const HomePage = () => {
                             <TextInput placeholder="Town's name" style={styles.textInput} onChangeText={(e) => setInputTown(e)} />
                             <>
                                 <Text style={[styles.currentDay, { color: textColor }]}>{formattedDay}</Text>
-                                <Image
-                                    style={styles.heartList}
-                                    source={
-                                        hour >= 17
-                                            ? require('../assets/heart_list_icon_white.png')
-                                            : require('../assets/heart_list_icon.png')
-                                    }
-                                />
+                                <TouchableOpacity onPress={() => navigation.navigate("Favorites", { towns: towns })}>
+                                    <Image
+                                        style={styles.heartList}
+                                        source={
+                                            hour >= 17
+                                                ? require('../assets/heart_list_icon_white.png')
+                                                : require('../assets/heart_list_icon.png')
+                                        }
+                                    />
+                                </TouchableOpacity>
                             </>
 
                         </View>
                         <View>
                             <Icon style={styles.searchIcon} name="search" onPress={handleSearch} />
-                            <Icon style={[styles.heartIcon, { color: textColor }]} name="heart-o" />
+                            {
+                                !heart ?
+                                    <Icon
+                                        style={[
+                                            styles.heartIcon,
+                                            {
+                                                color: towns.includes(inputTown) ? "red" : textColor,
+                                            },
+                                        ]}
+                                        name={towns.includes(inputTown) ? "heart" : "heart-o"}
+                                        onPress={handleSetHeart}
+                                    />
+                                    :
+                                    <Icon
+                                        style={[
+                                            styles.heartIcon,
+                                            {
+                                                color: towns.includes(inputTown) ? "red" : "red",
+                                            },
+                                        ]}
+                                        name="heart"
+                                        onPress={handleSetHeart}
+                                    />
+                            }
                         </View>
                     </View>
                     <View>
@@ -124,7 +209,7 @@ const HomePage = () => {
                                 </>
                             ) : (
                                 <>
-                                    <Text style={[styles.textsTopSide, { color: textColor }]}>{data && (data.main.temp).toFixed(1)}°C</Text>
+                                    <Text style={[styles.textsTopSide, { color: textColor }]}>{data && (data.main.temp).toFixed(1)}°F</Text>
                                     <Text style={[styles.textsTopSide, { color: textColor }]}>{data && data.weather && data.weather[0] && data.weather[0].main}</Text>
                                     <Text style={[styles.textsTopSide, { color: textColor }]}>↓{data && (data.main.temp_min).toFixed(0)}° ↑{data && (data.main.temp_max).toFixed(0)}°</Text>
                                 </>
@@ -141,6 +226,7 @@ const HomePage = () => {
                             ios_backgroundColor="#3e3e3e" />
                         <Text style={[styles.textsTopSide, { color: textColor }]}>°F</Text>
                     </View>
+                    <Text style={[styles.textsTopSide, { color: textColor }]}>Humidity : {data && data.main.humidity}</Text>
                 </ImageBackground>
             </View>
 
@@ -150,7 +236,7 @@ const HomePage = () => {
                         days.map((day, index) => (
                             <View key={index} style={[styles.viewListDay, { borderBottomWidth: index == days.length - 1 ? 0 : 1 }]}>
                                 <Text style={styles.textsBottomSide}>
-                                    {day} <Image style={styles.heartList} source={require("../assets/sunny_icon.png")} /> 28°C
+                                    {day} <Image style={styles.iconWeather} source={require("../assets/sunny_icon.png")} /> 28°C
                                 </Text>
                             </View>
                         ))
@@ -189,6 +275,10 @@ const styles = StyleSheet.create({
         color: "#fff"
     },
     heartList: {
+        height: 50,
+        width: 50
+    }, 
+    iconWeather: {
         height: 50,
         width: 50
     },
