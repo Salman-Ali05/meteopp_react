@@ -2,9 +2,9 @@ import { View, Text, StyleSheet, ImageBackground, Image, ScrollView, TextInput, 
 import React, { useEffect, useState } from 'react'
 import Icon from 'react-native-vector-icons/FontAwesome';
 import axios from 'axios';
+import { List } from 'react-native-paper';
 
 const HomePage = () => {
-
     const APIKEYWEATHER = "5858c82ebf597ee396b0cbace54ddf20";
 
     const currentDate = new Date();
@@ -12,6 +12,7 @@ const HomePage = () => {
     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thrusday', 'Friday', 'Saturday', 'Sunday']
     const [data, setData] = useState();
     const [inputTown, setInputTown] = useState("Paris");
+    const [unit, setUnit] = useState("metric")
     const [toggleState, setToggleState] = useState(false);
     const [currentWeatherPic, setCurrentWeatherPic] = useState('');
     const [textColor, setTextColor] = useState('#333');
@@ -45,11 +46,15 @@ const HomePage = () => {
         }
     }
 
-    const fetchData = () => {
-        let url = "http://api.openweathermap.org/data/2.5/weather?q=" + inputTown + "&appid=" + APIKEYWEATHER;
-        if (!toggleState) {
-            url += "&units=imperial"
+    const fetchData = async () => {
+        if (toggleState) {
+            setUnit("imperial")
+        } else {
+            setUnit("metric")
         }
+
+        let url = "http://api.openweathermap.org/data/2.5/weather?q=" + inputTown + "&appid=" + APIKEYWEATHER + "&units=" + unit;
+
         let config = {
             method: 'GET',
             maxBodyLength: Infinity,
@@ -57,7 +62,7 @@ const HomePage = () => {
 
         };
 
-        axios.request(config)
+        await axios.request(config)
             .then((response) => {
                 setData(response.data)
             })
@@ -85,8 +90,6 @@ const HomePage = () => {
     useEffect(() => {
         fetchData()
     }, []);
-
-    console.log(currentDate);
 
     return (
         <View style={styles.container}>
@@ -116,19 +119,11 @@ const HomePage = () => {
                     <View>
                         <Text style={[styles.textsTopSide, { color: textColor }]}>{data && data.name}</Text>
                         {
-                            !toggleState ? (
                                 <>
-                                    <Text style={[styles.textsTopSide, { color: textColor }]}>{data && (data.main.temp - 273).toFixed(1)}°C</Text>
-                                    <Text style={[styles.textsTopSide, { color: textColor }]}>{data && data.weather && data.weather[0] && data.weather[0].main}</Text>
-                                    <Text style={[styles.textsTopSide, { color: textColor }]}>↓{data && (data.main.temp_min - 273).toFixed(0)}° ↑{data && (data.main.temp_max - 273).toFixed(0)}°</Text>
+                                    <Text style={[styles.textsTopSide, { color: textColor }]}>{data && (data.main.temp).toFixed()}{toggleState ? "°F" : "°C"}</Text>
+                                    {/* <Text style={[styles.textsTopSide, { color: textColor }]}>{data && data.weather && data.weather[0] && data.weather[0].main}</Text> */}
+                                    <Text style={[styles.textsTopSide, { color: textColor, marginTop:20 }]}>↓{data && (data.main.temp_min).toFixed(0)}{toggleState ? "°F" : "°C"} ↑{data && (data.main.temp_max).toFixed(0)} {toggleState ? "°F" : "°C"}</Text>
                                 </>
-                            ) : (
-                                <>
-                                    <Text style={[styles.textsTopSide, { color: textColor }]}>{data && (data.main.temp).toFixed(1)}°C</Text>
-                                    <Text style={[styles.textsTopSide, { color: textColor }]}>{data && data.weather && data.weather[0] && data.weather[0].main}</Text>
-                                    <Text style={[styles.textsTopSide, { color: textColor }]}>↓{data && (data.main.temp_min).toFixed(0)}° ↑{data && (data.main.temp_max).toFixed(0)}°</Text>
-                                </>
-                            )
                         }
 
                     </View>
@@ -149,9 +144,13 @@ const HomePage = () => {
                     {
                         days.map((day, index) => (
                             <View key={index} style={[styles.viewListDay, { borderBottomWidth: index == days.length - 1 ? 0 : 1 }]}>
-                                <Text style={styles.textsBottomSide}>
-                                    {day} <Image style={styles.heartList} source={require("../assets/sunny_icon.png")} /> 28°C
-                                </Text>
+                                <List.Accordion 
+                                title={`${day}      ${data?.main?.temp}°C`}
+                                style={styles.textsBottomSide}
+                                right={props => <List.Icon {...props} icon={require("../assets/sunny_icon.png")} />}
+                                >
+                                    <List.Item title={`Humidité     ${data?.main?.humidity}`} />
+                                </List.Accordion>
                             </View>
                         ))
                     }
@@ -227,14 +226,14 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     viewListDay: {
-        width: "80%",
+        width: "100%",
         alignSelf: "center",
         borderColor: "#333",
     },
     textsBottomSide: {
         fontSize: 20,
         textAlign: "center",
-        marginBottom: 5
+        marginBottom: 5,
     }
 });
 
